@@ -25,6 +25,9 @@ variable "zone_id" {}
 variable "fqdn" {}
 variable "database_instance_class" {}
 variable "rancher_version" {}
+variable "docker_version" {}
+variable "rhel_selinux" {}
+variable "rhel_docker_native" { }
 
 
 # RDS
@@ -172,6 +175,9 @@ data "template_file" "userdata" {
         database_username = "${var.database_username}"
         database_password = "${var.database_password}"
         rancher_version = "${var.rancher_version}"
+        docker_version = "${var.docker_version}"
+        rhel_selinux = "${var.rhel_selinux}"
+        rhel_docker_native = "${var.rhel_docker_native}"
     }
 }
 
