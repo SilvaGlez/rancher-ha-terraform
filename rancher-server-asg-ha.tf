@@ -246,6 +246,19 @@ resource "aws_launch_configuration" "rancher_ha" {
     user_data     = "${data.template_file.userdata.rendered}"
     associate_public_ip_address = false
     ebs_optimized = false
+    root_block_device = [
+      {
+        volume_type = "gp2"
+        volume_size = "30"
+      }
+    ]
+    ebs_block_device = [
+      {
+        device_name = "/dev/xvdb"
+        volume_type = "gp2"
+        volume_size = "30"
+      }
+    ]
     lifecycle {
       create_before_destroy = true
     }

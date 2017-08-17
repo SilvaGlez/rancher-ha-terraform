@@ -40,21 +40,21 @@ write_files:
 
         sudo systemctl stop docker
 
-        #sudo tee /etc/sysconfig/docker-storage <<-EOF
-        #DOCKER_STORAGE_OPTIONS=--storage-driver=devicemapper --storage-opt=dm.thinpooldev=/dev/mapper/docker-thinpool --storage-opt dm.use_deferred_removal=true
-        #EOF
-        #sudo mkdir -p /etc/docker
-        #sudo tee /etc/docker/daemon.json <<-EOF
-        #{
-        #"storage-driver": "devicemapper",
-        #"storage-opts": [
-        # "dm.thinpooldev=/dev/mapper/docker-thinpool",
-        # "dm.use_deferred_removal=true",
-        # "dm.use_deferred_deletion=true"
-        #]
-        #}
-        #EOF
-        #sudo rm -rf /var/lib/docker
+      sudo tee /etc/sysconfig/docker-storage <<-EOF
+      DOCKER_STORAGE_OPTIONS=--storage-driver=devicemapper --storage-opt=dm.thinpooldev=/dev/mapper/docker-thinpool --storage-opt dm.use_deferred_removal=true
+      EOF
+        sudo mkdir -p /etc/docker
+      sudo tee /etc/docker/daemon.json <<-EOF
+      {
+      "storage-driver": "devicemapper",
+      "storage-opts": [
+      "dm.thinpooldev=/dev/mapper/docker-thinpool",
+      "dm.use_deferred_removal=true",
+      "dm.use_deferred_deletion=true"
+      ]
+      }
+      EOF
+        sudo rm -rf /var/lib/docker
         sudo systemctl daemon-reload
         sudo systemctl restart docker
 
@@ -78,9 +78,9 @@ write_files:
           sudo setenforce 0
         fi
 
-        #sudo tee /etc/sysconfig/docker-storage <<-EOF
-        #DOCKER_STORAGE_OPTIONS=--storage-driver=devicemapper --storage-opt=dm.thinpooldev=/dev/mapper/docker-thinpool --storage-opt dm.use_deferred_removal=true
-      	#EOF
+        sudo tee /etc/sysconfig/docker-storage <<-EOF
+        DOCKER_STORAGE_OPTIONS=--storage-driver=devicemapper --storage-opt=dm.thinpooldev=/dev/mapper/docker-thinpool --storage-opt dm.use_deferred_removal=true
+      	EOF
         sudo rm -rf /var/lib/docker
         sudo systemctl daemon-reload
         sudo systemctl restart docker
@@ -208,9 +208,8 @@ write_files:
 
         if [ 'redhat' == "$${osfamily}" ]; then
         echo 'Performing special RHEL osfamily storage config...'
-        # redhat_config
-        use_native_docker="${rhel_docker_native}" || exit $?
-        if [ $${use_native_docker} == "true" ]; then
+        redhat_config
+        if [ "${rhel_docker_native}" == "true" ]; then
           docker_lvm_thinpool_config_native
         else
           docker_lvm_thinpool_config
@@ -232,7 +231,7 @@ write_files:
       while ! ping -c 1 8.8.8.8 >/dev/null 2>&1; do echo 'waiting for net...'; sleep 2; done
 
       sleep 5
-      docker run -d -p 8080:8080 -p 9345:9345 --restart=unless-stopped  "${rancher_version}" --advertise-address `ifconfig eth0 | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}'` --db-host ${database_address} --db-port ${database_port} --db-name ${database_name} --db-user ${database_username} --db-pass ${database_password}
+      docker run -d -p 8080:8080 -p 9345:9345 --restart=unless-stopped  "${rancher_version}" --advertise-address `wget -qO- http://instance-data/latest/meta-data/local-ipv4` --db-host ${database_address} --db-port ${database_port} --db-name ${database_name} --db-user ${database_username} --db-pass ${database_password}
       EOF
       sudo chmod +x /opt/rancher/bin/kickoff.sh
       sudo sh /opt/rancher/bin/kickoff.sh &
