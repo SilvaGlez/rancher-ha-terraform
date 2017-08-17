@@ -9,6 +9,7 @@ variable "database_port"    {}
 variable "database_name"    {}
 variable "database_username" {}
 variable "database_password" {}
+variable "database_storage" {}
 variable "scale_min_size" {}
 variable "scale_max_size" {}
 variable "scale_desired_size" {}
@@ -25,7 +26,8 @@ variable "fqdn" {}
 variable "database_instance_class" {}
 variable "rancher_version" {}
 
-#Create Security group for access to RDS instance
+
+# RDS
 resource "aws_security_group" "rancher_ha_allow_db" {
   name = "${var.name}_allow_db"
   description = "Allow Connection from internal"
@@ -41,36 +43,36 @@ resource "aws_security_group" "rancher_ha_allow_db" {
     from_port = "${var.database_port}"
     to_port = "${var.database_port}"
     protocol = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    security_groups = ["${aws_security_group.rancher_ha_allow_elb.id}",
+                        "${aws_security_group.rancher_ha_web_elb.id}",
+                   "${aws_security_group.rancher_ha_allow_internal.id}"]
   }
 
 }
-#Create RDS database
 resource "aws_db_instance" "rancherdb" {
-  allocated_storage    = 10
+  allocated_storage    = "${var.database_storage}"
   engine               = "mysql"
-  instance_class       = "${var.database_instance_class}" 
+  instance_class       = "${var.database_instance_class}"
   name                 = "${var.database_name}"
   username             = "${var.database_username}"
   password             = "${var.database_password}"
   vpc_security_group_ids = ["${aws_security_group.rancher_ha_allow_db.id}"]
   }
-
+# Certificate
 resource "aws_iam_server_certificate" "rancher_ha"
  {
   name             = "${var.name}-cert"
   certificate_body = "${file("${var.rancher_ssl_cert}")}"
   private_key      = "${file("${var.rancher_ssl_key}")}"
   certificate_chain = "${file("${var.rancher_ssl_chain}")}"
-
-  provisioner "local-exec" {
-    command =  "ping 127.0.0.1 -n 10 > nul" # use -n on Windows terraform, and -c on linux
+  lifecycle {
+    create_before_destroy = true
   }
 }
 
-# Into ALB from upstream
-resource "aws_security_group" "rancher_ha_web_alb" {
-  name = "${var.name}_web_alb"
+# ELB
+resource "aws_security_group" "rancher_ha_web_elb" {
+  name = "${var.name}_web_elb"
   description = "Allow ports rancher "
   vpc_id = "${var.vpc_id}"
    egress {
@@ -88,9 +90,9 @@ resource "aws_security_group" "rancher_ha_web_alb" {
 }
 
 #Into servers
-resource "aws_security_group" "rancher_ha_allow_alb" {
-  name = "${var.name}_allow_alb"
-  description = "Allow Connection from alb"
+resource "aws_security_group" "rancher_ha_allow_elb" {
+  name = "${var.name}_allow_elb"
+  description = "Allow Connection from elb"
   egress {
     from_port = 0
     to_port = 0
@@ -102,7 +104,7 @@ ingress {
       from_port = 8080
       to_port = 8080
       protocol = "tcp"
-      security_groups = ["${aws_security_group.rancher_ha_web_alb.id}"]
+      security_groups = ["${aws_security_group.rancher_ha_web_elb.id}"]
   }
 }
 
@@ -178,34 +180,30 @@ provider "aws" {
 }
 
 # Create a new load balancer
-resource "aws_alb" "rancher_ha" {
-  name = "${var.name}-alb"
+resource "aws_elb" "rancher_ha" {
+  name = "${var.name}-elb"
   internal = false
-  security_groups = ["${aws_security_group.rancher_ha_web_alb.id}"]
-  subnets = ["${var.subnet1}","${var.subnet2}","${var.subnet3}"]
+  security_groups = ["${aws_security_group.rancher_ha_web_elb.id}"]
+  availability_zones = ["${var.az1}","${var.az2}","${var.az3}"]
+  listener {
+    instance_port      = 8080
+    instance_protocol  = "TCP"
+    lb_port            = 443
+    lb_protocol        = "SSL"
+    ssl_certificate_id = "${aws_iam_server_certificate.rancher_ha.arn}"
+  }
+  health_check {
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+    timeout             = 3
+    target              = "TCP:8080"
+    interval            = 30
+  }
 }
 
-resource "aws_alb_target_group" "rancher_ha" {
- name = "${var.name}-tg"
- port = 8080
- protocol = "HTTP"
- vpc_id = "${var.vpc_id}"
- health_check {
-   path="/ping"
- }
-}
-
-resource "aws_alb_listener" "rancher_ha" {
-   load_balancer_arn = "${aws_alb.rancher_ha.arn}"
-   port = "443"
-   protocol = "HTTPS"
-   ssl_policy = "ELBSecurityPolicy-2015-05"
-   certificate_arn = "${aws_iam_server_certificate.rancher_ha.arn}"
-
-   default_action {
-     target_group_arn = "${aws_alb_target_group.rancher_ha.arn}"
-     type = "forward"
-   }
+resource "aws_proxy_protocol_policy" "websockets" {
+  load_balancer  = "${aws_elb.rancher_ha.name}"
+  instance_ports = ["8080"]
 }
 
 resource "aws_autoscaling_group" "rancher_ha" {
@@ -214,11 +212,10 @@ resource "aws_autoscaling_group" "rancher_ha" {
   max_size = "${var.scale_max_size}"
   desired_capacity = "${var.scale_desired_size}"
   health_check_grace_period = 900
-  #health_check_type = "alb"
+  #health_check_type = "elb"
   force_delete = true
   launch_configuration = "${aws_launch_configuration.rancher_ha.name}"
-  target_group_arns = ["${aws_alb_target_group.rancher_ha.arn}"]
-  #load_balancers = ["${aws_alb.rancher_ha.name}"]
+  load_balancers = ["${aws_elb.rancher_ha.name}"]
   availability_zones = ["${var.az1}","${var.az2}","${var.az3}"]
   tag {
     key = "Name"
@@ -235,8 +232,8 @@ resource "aws_autoscaling_group" "rancher_ha" {
 resource "aws_launch_configuration" "rancher_ha" {
     name_prefix = "Launch-Config-rancher-server-ha"
     image_id = "${var.ami_id}"
-    security_groups = [ "${aws_security_group.rancher_ha_allow_alb.id}",
-                        "${aws_security_group.rancher_ha_web_alb.id}",
+    security_groups = [ "${aws_security_group.rancher_ha_allow_elb.id}",
+                        "${aws_security_group.rancher_ha_web_elb.id}",
                    "${aws_security_group.rancher_ha_allow_internal.id}"]
     instance_type = "${var.instance_type}"
     key_name      = "${var.key_name}"
@@ -246,10 +243,9 @@ resource "aws_launch_configuration" "rancher_ha" {
     lifecycle {
       create_before_destroy = true
     }
-
 }
 
-output "alb_dns"      { value = "${aws_alb.rancher_ha.dns_name}" }
+output "elb_dns"      { value = "${aws_elb.rancher_ha.dns_name}" }
 
 #### Remove below here if you don't want Route 53 to handle the DNS zone####
 
@@ -259,5 +255,5 @@ resource "aws_route53_record" "www" {
    name = "${var.fqdn}"
    type = "CNAME"
    ttl = "300"
-   records = ["${aws_alb.rancher_ha.dns_name}"]
+   records = ["${aws_elb.rancher_ha.dns_name}"]
 }
