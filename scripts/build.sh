@@ -8,7 +8,7 @@ while [[ 3 -gt $count ]]; do
     echo "Repeating failed Docker build ${count} of 3..."
 done
 
-env | egrep '^(TF_|AWS_).*\=.+' | sort > .env
+env | egrep '^(TF_|TERRAFORM_|AWS_).*\=.+' | sort > .env
 
 # Add the certificates
 mkdir -p certs
