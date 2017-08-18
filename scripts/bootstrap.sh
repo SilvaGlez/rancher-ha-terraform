@@ -35,15 +35,14 @@ BOOTSTRAP
 aws s3 mb s3://${AWS_S3_BUCKET}
 
 # Configuring Terraform Backing Store with AWS S3
+cd ../ && cat terraform.tfvars
 terraform init -backend=true \
                -backend-config="bucket=${AWS_S3_BUCKET}" \
                -backend-config="key=${TF_NAME}/terraform.tfstate" \
                -backend-config="region=${AWS_DEFAULT_REGION}"
 
 if [ "${TERRAFORM_APPLY}" == "true" ]; then
-  cat ../terraform.tfvars
-  cd ../ && terraform apply
+  terraform apply
 elif [ "${TERRAFORM_DESTROY}" == "true" ]; then
-  cat ../terraform.tfvars
-  cd ../ && terraform destroy -force
+  terraform destroy -force
 fi
