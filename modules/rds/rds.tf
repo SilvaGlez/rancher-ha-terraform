@@ -20,11 +20,12 @@ resource "aws_security_group" "rancher_ha_allow_db" {
 
 }
 resource "aws_db_instance" "rancherdb" {
-  allocated_storage    = "${var.database_storage}"
-  engine               = "mysql"
-  instance_class       = "${var.database_instance_class}"
-  name                 = "${var.database_name}"
-  username             = "${var.database_username}"
-  password             = "${var.database_password}"
+  allocated_storage      = "${var.database_storage}"
+  engine                 = "mysql"
+  instance_class         = "${var.database_instance_class}"
+  name                   = "${var.database_name}"
+  username               = "${var.database_username}"
+  password               = "${var.database_password}"
   vpc_security_group_ids = ["${aws_security_group.rancher_ha_allow_db.id}"]
+  skip_final_snapshot    = true
   }
