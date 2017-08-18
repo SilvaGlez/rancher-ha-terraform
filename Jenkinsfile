@@ -2,7 +2,7 @@
 
 
 // Get the AWS prefix if it exists
-def aws_prefix() {
+def tf_name() {
   try { if ('' != TF_NAME) { return TF_NAME } }
   catch (MissingPropertyException e) { return false }
 }
