@@ -1,0 +1,5 @@
+.terraform*
+.git/
+.env
+terraform.tfstate*
+terraform.tfvars
