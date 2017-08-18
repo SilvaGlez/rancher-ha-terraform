@@ -3,8 +3,8 @@ set -x
 
 cat <<BOOTSTRAP >> ../terraform.tfvars
 name = $TF_NAME
-aws_access_key = $AWS_ACCESS_KEY
-aws_secret_key = $AWS_SECRET_KEY
+aws_access_key = $AWS_ACCESS_KEY_ID
+aws_secret_key = $AWS_SECRET_ACCESS_KEY
 ami_id = $TF_AMI_ID
 instance_type = $TF_INSTANCE_TYPE
 database_instance_class = $TF_DATABASE_INSTANCE_CLASS
@@ -22,7 +22,7 @@ scale_max_size = $TF_SCALE_MAX_SIZE
 scale_desired_size = $TF_SCALE_DESIRED_SIZE
 fqdn = $TF_FQDN
 zone_id = $TF_ZONE_ID
-region = $AWS_REGION
+region = $AWS_DEFAULT_REGION
 vpc_id = $TF_VPC_ID
 azs = [$(for i in `echo $TF_AZS| tr ',' ' ' ` ; do echo \"$i\" ; done | paste -sd",")]
 rancher_version = $TF_RANCHER_VERSION
