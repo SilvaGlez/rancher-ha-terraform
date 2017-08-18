@@ -52,7 +52,7 @@ try {
       stage ('terraform run') {
         sh "docker run --rm  " +
           "--env-file .env " +
-          "rancherlabs/terraform_ha:latest /bin/bash -c \'cd \"\$(pwd)\" && ./scripts/bootstrap.sh\'"
+          "rancherlabs/terraform_ha:latest /bin/bash -c \'cd \"\$(pwd)\" && cat terraform.tfvars && ./scripts/bootstrap.sh\'"
       }
     } // wrap
   } // node

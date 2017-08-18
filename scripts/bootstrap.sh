@@ -41,7 +41,7 @@ terraform init -backend=true \
                -backend-config="region=${AWS_DEFAULT_REGION}"
 
 if [ "${TERRAFORM_APPLY}" == "true" ]; then
-  terraform apply
+  cd ../ && terraform apply
 elif [ "${TERRAFORM_DESTROY}" == "true" ]; then
-  terraform destroy -force
+  cd ../ && terraform destroy -force
 fi
