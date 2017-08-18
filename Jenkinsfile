@@ -54,6 +54,16 @@ try {
           "--env-file .env " +
           "rancherlabs/terraform_ha:latest /bin/bash -c \'cd \"\$(pwd)\" && ./scripts/bootstrap.sh\'"
       }
+      if ( "true" == "${TERRAFORM_APPLY}" ) {
+        stage ('Wait until the setup is ready') {
+          sh '''
+              until $(curl --output /dev/null --silent --head --fail https://${TF_FQDN}); do
+              printf '.'
+              sleep 30
+              done
+          '''
+        }
+      }
     } // wrap
   } // node
 } catch(err) { currentBuild.result = 'FAILURE' }

@@ -27,3 +27,7 @@ variable "rhel_docker_native" {}
 variable "azs" {
   type = "list"
 }
+
+output "rancher_server_endpoint" {
+  value = "https://${var.fqdn}"
+}
