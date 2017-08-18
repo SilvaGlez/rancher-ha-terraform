@@ -38,7 +38,6 @@ module "servers" {
   vpc_id               = "${var.vpc_id}"
   ami_id               = "${var.ami_id}"
   instance_type        = "${var.instance_type}"
-  key_name             = "${var.key_name}"
   database_port        = "${var.database_port}"
   database_name        = "${var.database_name}"
   database_username    = "${var.database_username}"

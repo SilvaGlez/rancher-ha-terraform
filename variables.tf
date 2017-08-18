@@ -1,7 +1,6 @@
 variable "name" {}
 variable "ami_id" {}
 variable "instance_type" {}
-variable "key_name" {}
 variable "rancher_ssl_cert" {}
 variable "rancher_ssl_key"  {}
 variable "rancher_ssl_chain"  {}

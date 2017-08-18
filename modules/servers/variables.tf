@@ -2,7 +2,6 @@ variable "name" {}
 variable "ami_id" {}
 variable "vpc_id" {}
 variable "instance_type" {}
-variable "key_name" {}
 variable "database_port"    {}
 variable "database_name"    {}
 variable "database_username" {}

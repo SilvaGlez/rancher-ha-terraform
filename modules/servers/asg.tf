@@ -28,7 +28,6 @@ resource "aws_launch_configuration" "rancher_ha" {
                         "${var.elb_sec_grp_id}",
                    "${aws_security_group.rancher_ha_allow_internal.id}"]
     instance_type = "${var.instance_type}"
-    key_name      = "${var.key_name}"
     user_data     = "${data.template_file.userdata.rendered}"
     associate_public_ip_address = false
     ebs_optimized = false
