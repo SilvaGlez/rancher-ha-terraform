@@ -45,8 +45,10 @@ terraform init -backend=true \
 
 if [ "${TERRAFORM_PLAN}" == "true" ]; then
   terraform plan
-elif [ "${TERRAFORM_APPLY}" == "true" ]; then
+fi
+if [ "${TERRAFORM_APPLY}" == "true" ]; then
   terraform apply
-elif [ "${TERRAFORM_DESTROY}" == "true" ]; then
+fi
+if [ "${TERRAFORM_DESTROY}" == "true" ]; then
   terraform destroy -force
 fi
