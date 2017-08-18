@@ -15,12 +15,8 @@ variable "scale_max_size" {}
 variable "scale_desired_size" {}
 variable "region" {}
 variable "vpc_id" {}
-variable "az1" {}
-variable "az2" {}
-variable "az3" {}
-variable "subnet1" {}
-variable "subnet2" {}
-variable "subnet3" {}
+variable "aws_access_key" {}
+variable "aws_secret_key" {}
 variable "zone_id" {}
 variable "fqdn" {}
 variable "database_instance_class" {}
@@ -28,7 +24,9 @@ variable "rancher_version" {}
 variable "docker_version" {}
 variable "rhel_selinux" {}
 variable "rhel_docker_native" { }
-
+variable "azs" {
+  type = "list"
+}
 
 # RDS
 resource "aws_security_group" "rancher_ha_allow_db" {
@@ -65,9 +63,9 @@ resource "aws_db_instance" "rancherdb" {
 resource "aws_iam_server_certificate" "rancher_ha"
  {
   name             = "${var.name}-cert"
-  certificate_body = "${file("${var.rancher_ssl_cert}")}"
-  private_key      = "${file("${var.rancher_ssl_key}")}"
-  certificate_chain = "${file("${var.rancher_ssl_chain}")}"
+  certificate_body = "${var.rancher_ssl_cert}"
+  private_key      = "${var.rancher_ssl_key}"
+  certificate_chain = "${var.rancher_ssl_chain}"
   lifecycle {
     create_before_destroy = true
   }
@@ -182,6 +180,8 @@ data "template_file" "userdata" {
 }
 
 provider "aws" {
+    access_key = "${var.aws_access_key}"
+    secret_key = "${var.aws_secret_key}"
     region = "${var.region}"
 }
 
@@ -190,7 +190,7 @@ resource "aws_elb" "rancher_ha" {
   name = "${var.name}-elb"
   internal = false
   security_groups = ["${aws_security_group.rancher_ha_web_elb.id}"]
-  availability_zones = ["${var.az1}","${var.az2}","${var.az3}"]
+  availability_zones = "${var.azs}"
   listener {
     instance_port      = 8080
     instance_protocol  = "TCP"
@@ -222,7 +222,7 @@ resource "aws_autoscaling_group" "rancher_ha" {
   force_delete = true
   launch_configuration = "${aws_launch_configuration.rancher_ha.name}"
   load_balancers = ["${aws_elb.rancher_ha.name}"]
-  availability_zones = ["${var.az1}","${var.az2}","${var.az3}"]
+  availability_zones = "${var.azs}"
   tag {
     key = "Name"
     value = "${var.name}"
