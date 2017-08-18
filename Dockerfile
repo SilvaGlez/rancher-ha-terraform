@@ -13,6 +13,5 @@ RUN mkdir terraform/
 ADD . terraform
 
 WORKDIR terraform
-RUN terraform get
 
 CMD scripts/bootstrap.sh

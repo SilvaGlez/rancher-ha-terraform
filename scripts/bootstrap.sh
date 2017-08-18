@@ -35,7 +35,9 @@ BOOTSTRAP
 aws s3 mb s3://${AWS_S3_BUCKET}
 
 # Configuring Terraform Backing Store with AWS S3
-cd ../ && cat terraform.tfvars
+cd ../
+cat terraform.tfvars
+terraform get
 terraform init -backend=true \
                -backend-config="bucket=${AWS_S3_BUCKET}" \
                -backend-config="key=${TF_NAME}/terraform.tfstate" \
