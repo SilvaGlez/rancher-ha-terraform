@@ -35,7 +35,6 @@ BOOTSTRAP
 aws s3 mb s3://${AWS_S3_BUCKET}
 
 # Configuring Terraform Backing Store with AWS S3
-cd ../
 ls -la
 cat terraform.tfvars
 terraform get
