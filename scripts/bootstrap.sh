@@ -1,7 +1,7 @@
 #!/bin/bash
 set -x
 
-cat <<BOOTSTRAP >> ../terraform.tfvars
+cat <<BOOTSTRAP >> terraform.tfvars
 name = "$TF_NAME"
 aws_access_key = "$AWS_ACCESS_KEY_ID"
 aws_secret_key = "$AWS_SECRET_ACCESS_KEY"
