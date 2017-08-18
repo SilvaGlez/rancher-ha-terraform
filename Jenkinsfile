@@ -61,6 +61,7 @@ try {
               printf '.'
               sleep 30
               done
+              echo "Rancher HA URL: https://${TF_FQDN}"
           '''
         }
       }
