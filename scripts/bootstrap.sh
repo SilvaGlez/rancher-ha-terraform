@@ -38,7 +38,7 @@ aws s3 mb s3://${AWS_S3_BUCKET}
 terraform init -backend=true \
                -backend-config="bucket=${AWS_S3_BUCKET}" \
                -backend-config="key=${TF_NAME}/terraform.tfstate" \
-               -backend-config="region=${AWS_REGION}"
+               -backend-config="region=${AWS_DEFAULT_REGION}"
 
 if [ "${TERRAFORM_APPLY}" == "true" ]; then
   terraform apply
